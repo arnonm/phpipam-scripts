@@ -1,0 +1,59 @@
+---
+
+services:
+  phpipam-web:
+    image: phpipam/phpipam-www:latest
+    ports:
+      - "3001:80"
+    environment:
+      - TZ=Asia/Jerusalem
+      - IPAM_DATABASE_HOST=phpipam-mariadb
+      - IPAM_DATABASE_PASS=phpipam
+      - IPAM_DATABASE_WEBHOST=%
+      - IPAM_DISABLE_INSTALLER=1
+    restart: unless-stopped
+    volumes:
+      - phpipam-logo:/phpipam/css/images/logo
+      - phpipam-ca:/usr/local/share/ca-certificates:ro
+    depends_on:
+      - phpipam-mariadb
+    #networks:
+      #- sample-front-tier
+      #- sample-back-tier
+
+  phpipam-cron:
+    build: .
+    environment:
+      - TZ=Asia/Jerusalem
+      - IPAM_DATABASE_HOST=phpipam-mariadb
+      - IPAM_DATABASE_PASS=phpipam
+      - IPAM_SERVER=http://phpipam-web:80
+      - IPAM_CLIENT=apiclient
+      - IPAM_API_KEY=false
+      - IPAM_API_USER=user
+      - IPAM_API_PASSWORD=password
+      - SCAN_INTERVAL=1h
+    restart: unless-stopped
+    volumes:
+      - phpipam-ca:/usr/local/share/ca-certificates:ro
+    #networks:
+    #- sample-front-tier
+    #- sample-back-tiernetworks:
+
+  phpipam-mariadb:
+    image: mariadb:10.8
+    environment:
+      - MYSQL_ROOT_PASSWORD=my_secret_mysql_root_pass
+    restart: unless-stopped
+    volumes:
+      - ./phpipam-db-data:/var/lib/mysql
+
+volumes:
+  phpipam-logo:
+  phpipam-ca:
+
+
+#networks:
+  # sample-front-tier:
+  #  name: front-tier
+  #  external: true
